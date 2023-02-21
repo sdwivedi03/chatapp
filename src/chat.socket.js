@@ -10,16 +10,17 @@ module.exports = (io) => {
   
   io.on('connection', (socket) => {    
     
-    console.log('New user connected: ',socket.id)
-    // onlineUsers.set(userId, socket.id);
+    console.log('New user connected: ',socket.id);
+    const userId = socket.user.id;
+    onlineUsers.set(userId, socket.id);
     socket.on('disconnect', () => {
       logger.info('User disconnected');
-      // onlineUsers.delete(userId);
+      onlineUsers.delete(userId);
     })
 
     socket.on('error', (err) => {
       logger.info('User disconnected individual error', err);
-      // onlineUsers.delete(userId);
+      onlineUsers.delete(userId);
     })
   
     socket.on('newMessage', async (payload, callback) => {
@@ -30,9 +31,9 @@ module.exports = (io) => {
         return callback(new SocketError(httpStatus.BAD_REQUEST, errorMessage));
       }
       const message = await messageService.saveMessage(value);
-      console.log('first payload: -- ',payload, 'second payload:---',message.id);
+      console.log(message.id);
       //Send newly created message to everyone including sender
-      io.emit('newMessage', payload);
+      io.to(onlineUsers[0]).emit('newMessage', payload);
     })
 
     socket.on('editMessage', async (payload) => {

@@ -14,7 +14,6 @@ describe("It test message functionality", () => {
 
       try{
 
-        console.log('After that-----------------------------------------------------');
         // const chats = await messageService.getChatsByUser(user.id)
         socket = io('http://localhost:3000', {
           withCredentials: true,
@@ -26,7 +25,7 @@ describe("It test message functionality", () => {
         currentUser = user;
         done();
       } catch(err){
-        console.log(err, 'user-----------');
+        console.log(err);
         done(err);
         }
     });

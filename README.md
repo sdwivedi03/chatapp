@@ -10,7 +10,7 @@ It contains only backend of this project, that has been created using RESTful AP
 2. Group chat
 3. Group creation
 4. Add or remove a member in group
-5. Search a in users list
+5. Search a user in from users
 6. User creation, update, delete and update
 7. Authentication and Authorization
 
@@ -49,6 +49,7 @@ I have created a sample file for environment variables as `.env.sample` you need
 
 ```
 src\
+ |--build\          # Views of chat applicaiton (Reactjs build files) 
  |--config\         # Environment variables and configuration related things
  |--controllers\    # Route controllers (controller layer)
  |--middlewares\    # Custom express middlewares
@@ -58,7 +59,9 @@ src\
  |--utils\          # Utility classes and functions
  |--validations\    # Request data validation schemas
  |--app.js          # Express app
+ |--chat.socket.js  # Chats and groups socket.io events handler
  |--index.js        # App entry point
+
 ```
 ### API Endpoints
 

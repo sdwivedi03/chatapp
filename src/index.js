@@ -13,16 +13,14 @@ const io = new Server(server);
 io.engine.use(passport.initialize());
 passport.use('jwt', jwtStrategy);
 io.engine.use(auth());
-// io.engine.use(auth());
-// io.use(auth());
 
-io.on('error', (err) => {
-  console.log('Server errror', err);
+io.use((socket, next) => {
+  console.log('Server errror', socket.error);
+  next();
+  // socket.destroy();
 })
 
 chatSocket(io);
-
-// (async userId => await messageService.getAllRecentChatsForUser(userId))('sajhsjhajshj7');
 
 
 

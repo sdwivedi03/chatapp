@@ -5,12 +5,16 @@ const { roleRights } = require('../config/roles');
 
 const verifyCallback = (req, resolve, reject, requiredRights) => async (err, user, info) => {
   if (err || info || !user) {
-    console.log(req,'INsideddddddddd-----------------------------------------------',info);
+    if(req.socket){
+      console.log('insideeeeeeeeeeeeeeee------------',info);
+      req.error = new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
+    }
     return reject(new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate'));
   }
-
+  if(req.socket) req.socket.user = user;
   req.user = user;
-  
+  console.log('insideeeeeeeeeeeeeeee', req.socket.user);
+
   if (requiredRights.length) {
     const userRights = roleRights.get(user.role);
     const hasRequiredRights = requiredRights.every((requiredRight) => userRights.includes(requiredRight));
@@ -27,22 +31,10 @@ const auth = (...requiredRights) => async (req, res, next) => {
     passport.authenticate('jwt', { session: false }, verifyCallback(req, resolve, reject, requiredRights))(req, res, next);
   })
     .then(() => next())
-    .catch((err) => {
-      console.log('hiiiiiiiiiiiiiiiiii',err);
-      next(err)
-    });
-};
-
-
-const authSocket = (...requiredRights) => async (req, res, next) => {
-  return new Promise((resolve, reject) => {
-    passport.authenticate('jwt', { session: false }, verifyCallback(req, resolve, reject, requiredRights))(req, res, next);
-  })
-    .then(() => next())
     .catch((err) => next(err));
 };
 
+
 module.exports = {
-  auth,
-  authSocket
+  auth
 }
