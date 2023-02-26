@@ -1,6 +1,6 @@
 const httpStatus = require('http-status');
-const { Op, col, where, fn, literal, QueryTypes, query } = require('sequelize');
-const { Message, Recipient, Participant } = require('../models');
+const { Op, col, where, fn, literal, QueryTypes } = require('sequelize');
+const { Message, Recipient, Participant, sequelize } = require('../models');
 const ApiError = require('../utils/ApiError');
 const { getUserById } = require('./user.service')
 
@@ -9,48 +9,42 @@ const { getUserById } = require('./user.service')
  * @param {string} userId
  * @returns {Promise<Message[]>}
  */
-const getChatsByUser = async (userId) => {
-
-    console.log('---------------------', userId);
-    return Message.findAll({ 
-        attributes: [
-            [literal(`max(CASE 
-                        WHEN Message.isGroup THEN (SELECT name FROM Group WHERE Group.id = Message.groupId)
-                        WHEN Message.sender = ${userId} THEN (SELECT name FROM User WHERE User.id = Recepient.userId)
-                        ELSE (SELECT name FROM User WHERE User.id = Message.sender)
-                    END)`), 'title'],
-
-            [literal(`max(CASE 
-                        WHEN Message.sender != ${userId} AND Recepient.recievedAt THEN Recepient.recievedAt
-                        ELSE Message.sentAt
-                    END)`), 'time'],
-
-            'sender', 
-            'text'
-
-        ],
-        include: { model: Recipient, required: true }, 
-        where: { 
-            sentAt: 1
-        },
-        group: ['Message.sender', 'Recepient.userId'],
-        order: [
-            ['sentAt', 'DESC']    
-        ],
-    });
+const getUsersRecentChat = async (userId) => {
 
     const queryString = `
-        SELECT * 
-        FROM Messages 
-        INNER JOIN (
-            SELECT id 
-            FROM Messages
-            WHERE senderId = ${userId} OR re
-            GROUP BY senderId, receiverId
-        )
-    `;
+        SELECT 
+        otherId, 
+        text,
+        latestTime,
+        senderId,
+        (SELECT name FROM Users WHERE Users.id = Messages.senderId) AS sender,
+        (
+            CASE
+                WHEN isGroup THEN (SELECT name FROM \`Groups\` WHERE \`Groups\`.id = otherId)
+                ELSE (SELECT name FROM Users WHERE Users.id = otherId)
+            END
+        ) as chatTitle
+        FROM
+            (
+                SELECT 
+                    (CASE
+                        WHEN (Messages.senderId = :userId) THEN Messages.receiverId
+                        ELSE Messages.senderId 
+                    END) as otherId, 
+                    MAX(sentAt) latestTime
+                FROM Messages INNER JOIN Recipients ON Messages.id = Recipients.MessageId
+                WHERE Messages.senderId = :userId OR Messages.receiverId = :userId
+                GROUP BY otherId
+            ) RecentChats
 
-    return await query(queryString, {type: QueryTypes.SELECT})
+            INNER JOIN Messages 
+                ON (
+                    (RecentChats.otherId = Messages.senderId AND Messages.receiverId = :userId)
+                    OR (RecentChats.otherId = Messages.receiverId AND Messages.senderId = :userId)
+                ) AND Messages.sentAt = RecentChats.latestTime
+        ORDER BY latestTime;
+    `;
+    return await sequelize.query(queryString, {type: QueryTypes.SELECT, replacements: {userId}});
 };
 
 /**
@@ -107,15 +101,14 @@ const getMessagesInGroup = async (groupId) => {
 };
 
 /**
- * Get a new message with id
+ * Get a message with id
  * @param {Object} messageId
  * @returns {Promise<User>}
  */
 const getMessageById = async (messageId) => {
-    const message = await Message.findByPk({
-        include: { model: Recipient, required: true },
-        where: {id: messageId}});
-        console.log('get message by id=====',message);
+    const message = await Message.findByPk(messageId,{
+        include: Recipient,
+    });
     return message;
   };
 
@@ -125,20 +118,26 @@ const getMessageById = async (messageId) => {
  * @returns {Promise<Message>}
  */
 const saveMessage = async (messageBody) => {
-    
     if(messageBody.isGroup){
-        const recipients = await Participant.findAll({groupId: messageBody.receiverId});
-        console.log('reciepients----', recipients);
+        const recipients = await Participant.findAll({ 
+            where: {
+                groupId: messageBody.receiverId,
+                userId: {
+                    [Op.ne]: messageBody.senderId
+                }
+
+            }
+        });
         if(!recipients) throw new ApiError(httpStatus.NOT_FOUND, 'No recipients found');
         const message = await Message.create(messageBody);
-        await Recipient.bulkCreate(recipients.map(member => ({userId: member.userId, messageId: message.id})))
-        return message;
+        await Recipient.bulkCreate(recipients.map(member => ({userId: member.userId, MessageId: message.id})))
+        return await getMessageById(message.id);
     } else {
         const receiver = await getUserById(messageBody.receiverId);
         if(!receiver) throw new ApiError(httpStatus.NOT_FOUND, 'No recipients found');
         const message = await Message.create(messageBody);
-        await Recipient.create({userId: message.receiverId, messageId: message.id})
-        return message;
+        await Recipient.create({userId: message.receiverId, MessageId: message.id})
+        return await getMessageById(message.id);
     }
 };
 
@@ -185,7 +184,7 @@ const deleteMessageById = async (currentUserId, messageId) => {
 };
 
 module.exports = {
-    getChatsByUser,
+    getUsersRecentChat,
     getMessagesWithIndividual,
     getMessagesInGroup,
     getMessageById,

@@ -48,7 +48,7 @@ module.exports = {
     dialect: envVars.DB_DIALECT,
     port: envVars.DB_PORT,
     operatorsAliases: 0,
-    logging: false,
+    logging: envVars.NODE_ENV !== 'production',
   },
   jwt: {
     secret: envVars.JWT_SECRET,

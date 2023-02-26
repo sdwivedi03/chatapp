@@ -10,8 +10,8 @@ module.exports = (sequelize, DataTypes) => {
   }
   Participant.init(
     {
-      // groupId: DataTypes.STRING,
-      // userId: DataTypes.STRING,
+      // groupId: DataTypes.UUID,
+      userId: DataTypes.UUID,
       addedBy: DataTypes.UUID
     },
     {

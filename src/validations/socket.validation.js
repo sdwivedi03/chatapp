@@ -8,6 +8,13 @@ const saveMessage = Joi.object().keys({
     text: Joi.string().required(),
 });
 
+
+const createGroup = Joi.object().keys({
+  name: Joi.string().required(),
+  participants: Joi.array().items(Joi.custom(objectId))
+});
+
 module.exports = {
   saveMessage,
+  createGroup,
 };

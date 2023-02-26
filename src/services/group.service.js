@@ -10,7 +10,8 @@ const ApiError = require('../utils/ApiError');
  */
 const createGroup = async (groupBody) => {
   const group = await Group.create(groupBody);
-  return group;
+  await Participant.bulkCreate(groupBody.participants.map(userId => ({userId, GroupId: group.id, addedBy: groupBody.createdBy})));
+  return await getGroupById(group.id);
 };
 
 /**
@@ -19,7 +20,9 @@ const createGroup = async (groupBody) => {
  * @returns {Promise<Group>}
  */
 const getGroupById = async (id) => {
-  return Group.findByPk(id);
+  return Group.findByPk(id, {
+    include: Participant
+  });
 };
 
 /**

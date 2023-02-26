@@ -10,7 +10,6 @@ const jwtOptions = {
 
 const jwtVerify = async (payload, done) => {
   try {
-    console.log('Now Socket came to here with: ', payload);
 
     if (payload.type !== tokenTypes.ACCESS) {
       throw new Error('Invalid token type');

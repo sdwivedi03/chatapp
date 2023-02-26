@@ -21,7 +21,6 @@ describe("It test message functionality", () => {
             Authorization: `Bearer ${tokens.access.token}`
           }
           });
-        // console.log('---------CHATS-------',chats);
         currentUser = user;
         done();
       } catch(err){

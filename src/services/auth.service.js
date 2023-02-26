@@ -16,7 +16,6 @@ const loginUserWithEmailAndPassword = async (email, password) => {
   if (!user || !(await user.isPasswordMatch(password))) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password');
   }
-  // console.log(user,'this use details from authentication service')
   return user;
 };
 
@@ -41,7 +40,6 @@ const logout = async (refreshToken) => {
 const refreshAuth = async (refreshToken) => {
   try {
     const refreshTokenDoc = await tokenService.verifyToken(refreshToken, tokenTypes.REFRESH);
-    console.log(refreshTokenDoc);
     const user = await userService.getUserById(refreshTokenDoc.user);
     if (!user) {
       throw new Error();
