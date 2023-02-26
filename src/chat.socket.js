@@ -10,9 +10,10 @@ module.exports = (io) => {
   
   io.on('connection', (socket) => {    
     
-    console.log('New user connected: ',socket.id);
+    console.log('New user connected: ',socket.user.name);
     const userId = socket.user.id;
     onlineUsers.set(userId, socket.id);
+    io.emit('online', userId)
     socket.on('disconnect', () => {
       logger.info('User disconnected');
       onlineUsers.delete(userId);
@@ -24,7 +25,10 @@ module.exports = (io) => {
     })
   
     socket.on('newMessage', async (payload, callback) => {
-      const {error, value} = socketValidation.saveMessage.validate(payload);
+      const messageBody = JSON.parse(payload);
+      messageBody.senderId = userId;
+      const {error, value} = socketValidation.saveMessage.validate(messageBody);
+
       if(error) {
         console.log('errrr',error);
         const errorMessage = error.details.map((details) => details.message).join(', ');
@@ -33,7 +37,7 @@ module.exports = (io) => {
       const message = await messageService.saveMessage(value);
       console.log(message.id);
       //Send newly created message to everyone including sender
-      io.to(onlineUsers[0]).emit('newMessage', payload);
+      io.to(onlineUsers.get(userId)).emit('newMessage', message);
     })
 
     socket.on('editMessage', async (payload) => {

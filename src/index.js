@@ -3,22 +3,21 @@ const logger = require('./config/logger');
 const app = require('./app');
 const http = require('http');
 const passport = require('passport');
-const { jwtStrategy } = require('./config/passport');
-const { auth, authSocket } = require('./middlewares/auth');
+const { socketAuth } = require('./middlewares/auth');
 const chatSocket = require('./chat.socket');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-io.engine.use(passport.initialize());
-passport.use('jwt', jwtStrategy);
-io.engine.use(auth());
-
 io.use((socket, next) => {
-  console.log('Server errror', socket.error);
-  next();
-  // socket.destroy();
-})
+  //Passport compatibale to express middleware
+  //accepts three arguments req,res,next.
+  //We are making IO middleware compatible by passing
+  //an extra empty object
+  passport.initialize()(socket, {}, next)
+});
+
+io.use(socketAuth());
 
 chatSocket(io);
 

@@ -50,8 +50,8 @@ app.use((req, res, next) => {
 // });
 
 // Authentication and autherization using jwt
-app.use(passport.initialize());
 passport.use('jwt', jwtStrategy);
+app.use(passport.initialize());
 
 // limit repeated failed requests to auth endpoints
 if (config.env === 'production') {

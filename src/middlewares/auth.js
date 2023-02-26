@@ -5,15 +5,10 @@ const { roleRights } = require('../config/roles');
 
 const verifyCallback = (req, resolve, reject, requiredRights) => async (err, user, info) => {
   if (err || info || !user) {
-    if(req.socket){
-      console.log('insideeeeeeeeeeeeeeee------------',info);
-      req.error = new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
-    }
     return reject(new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate'));
   }
-  if(req.socket) req.socket.user = user;
+  
   req.user = user;
-  console.log('insideeeeeeeeeeeeeeee', req.socket.user);
 
   if (requiredRights.length) {
     const userRights = roleRights.get(user.role);
@@ -34,7 +29,16 @@ const auth = (...requiredRights) => async (req, res, next) => {
     .catch((err) => next(err));
 };
 
+const socketAuth = (...requiredRights) => async (socket, next) => {
+  return new Promise((resolve, reject) => {
+    passport.authenticate('jwt', { session: false }, verifyCallback(socket, resolve, reject, requiredRights))(socket.handshake, next);
+  })
+    .then(() => next())
+    .catch((err) => next(err));
+};
+
 
 module.exports = {
-  auth
+  auth,
+  socketAuth
 }

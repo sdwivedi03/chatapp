@@ -10,7 +10,7 @@ const sequelize = new Sequelize(db.database, db.username, db.password, db);
 sequelize
   .authenticate()
   .then(() => logger.info('Connected to database server'))
-  .catch(() => logger.warn('Unable to connect to database server. Make sure you have configured the DB options in .env and database with provided name exist on the server'));
+  .catch((e) => logger.warn('Unable to connect to database server. Make sure you have configured the DB options in .env and database with provided name exist on the servera:'));
 
 const models = {
   sequelize,
