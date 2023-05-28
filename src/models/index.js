@@ -4,7 +4,7 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const { db } = require('../config/config');
 const logger = require('../config/logger');
-
+console.log(db);
 const sequelize = new Sequelize(db.database, db.username, db.password, db);
 
 sequelize
